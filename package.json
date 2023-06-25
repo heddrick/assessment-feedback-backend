@@ -1,12 +1,17 @@
 {
-  "name": "assessment-feedback-backend",
-  "version": "0.0.1",
-  "description": "PASS Assessment Feedback Tool Node.js application",
+  "name": "nodejs-starter",
+  "version": "2.0.0",
+  "description": "Simple Node.js application",
   "license": "EPL-2.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "debug": "node --inspect=${DEBUG_PORT} server.js",
+    "test": "node test/test.js"
   },
   "dependencies": {
-    "express": "^4.18.1"
+    "express": "^4.18.1",
+    "pino": "^8.5.0",
+    "pino-http": "^8.2.0",
+    "prom-client": "^14.1.0"
   }
 }
