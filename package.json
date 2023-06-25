@@ -1,0 +1,12 @@
+{
+  "name": "assessment-feedback-backend",
+  "version": "0.0.1",
+  "description": "PASS Assessment Feedback Tool Node.js application",
+  "license": "EPL-2.0",
+  "scripts": {
+    "start": "node server.js",
+  },
+  "dependencies": {
+    "express": "^4.18.1",
+  }
+}
