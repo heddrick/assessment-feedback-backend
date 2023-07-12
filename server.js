@@ -1,67 +1,64 @@
-const Prometheus = require('prom-client')
-const express = require('express');
-const http = require('http');
+var http       = require('http');
+var express    = require('express');
+var app        = express();
+var bodyParser = require('body-parser');
 
-Prometheus.collectDefaultMetrics();
+// initialize OpenAI code
+const { Configuration, OpenAIApi } = require("openai");
 
-const requestHistogram = new Prometheus.Histogram({
-    name: 'http_request_duration_seconds',
-    help: 'Duration of HTTP requests in seconds',
-    labelNames: ['code', 'handler', 'method'],
-    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5]
-})
-
-const requestTimer = (req, res, next) => {
-  const path = new URL(req.url, `http://${req.hostname}`).pathname
-  const stop = requestHistogram.startTimer({
-    method: req.method,
-    handler: path
-  })
-  res.on('finish', () => {
-    stop({
-      code: res.statusCode
-    })
-  })
-  next()
-}
-
-const app = express();
-const server = http.createServer(app)
-
-// See: http://expressjs.com/en/4x/api.html#app.settings.table
-const PRODUCTION = app.get('env') === 'production';
-
-// Administrative routes are not timed or logged, but for non-admin routes, pino
-// overhead is included in timing.
-app.get('/ready', (req, res) => res.status(200).json({status:"ok"}));
-app.get('/live', (req, res) => res.status(200).json({status:"ok"}));
-app.get('/metrics', async (req, res, next) => {
-  const metrics = await Prometheus.register.metrics();
-  res.set('Content-Type', Prometheus.register.contentType)
-  res.end(metrics);
-})
-
-// Time routes after here.
-app.use(requestTimer);
-
-// Log routes after here.
-const pino = require('pino')({
-  level: PRODUCTION ? 'info' : 'debug',
-});
-app.use(require('pino-http')({logger: pino}));
-
-app.get('/', (req, res) => {
-  // Use req.log (a `pino` instance) to log JSON:
-  req.log.info({message: 'Hello from Node.js Starter Application!'});
-  res.send('Hello from Node.js Starter Application!');
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-app.get('*', (req, res) => {
-  res.status(404).send("Not Found");
+const openai = new OpenAIApi(configuration);
+
+// use body parser so we can get info from POST and/or URL parameters
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+var router = express.Router();
+
+// middleware used to malke all responses CORS complient
+router.use(function(req, res, next) {
+    // go ahead and make the response CORS
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
 });
 
-// Listen and serve.
-const PORT = 8090;
-server.listen(PORT, () => {
-  console.log(`App started on PORT ${PORT}`);
+// route GET reqs to /pulse to logic that sends a OK response
+router.get('/pulse', function(req, res) {
+    res.status(200).json({result: 'I am alive.'});
 });
+
+// route POST reqs to /prompt to logic that forwards the prompt on to ChatGPT
+router.post('/prompt', async function(req, res) {
+    try {
+        const completion = await openai.createCompletion({
+            model: "text-davinci-003",
+            prompt: req.body.prompt,
+            max_tokens: 1000,
+            temperature: 0.7
+        });
+
+        res.status(200).json({result: completion.data.choices[0].text});
+
+    } catch (error) {
+        if (error.response) {
+            console.log(error.response.status);
+            console.log(error.response.data);
+            res.status(error.response.status).json({result: error.response.data});
+
+        } else {
+            console.log(error.message);
+        }
+    }
+});
+
+app.use('/api', router);
+
+//Create a secure server
+var server = http.createServer(app);
+var port = 8090
+server.listen(port)
+console.log('listening on port ' + port);
