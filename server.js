@@ -12,6 +12,8 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
+const promptPreamble = process.env.PROMPT
+
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -36,7 +38,7 @@ router.post('/prompt', async function(req, res) {
     try {
         const completion = await openai.createCompletion({
             model: "text-davinci-003",
-            prompt: req.body.prompt,
+            prompt: promptPreamble + ' ' + req.body.prompt,
             max_tokens: 1000,
             temperature: 0.7
         });
