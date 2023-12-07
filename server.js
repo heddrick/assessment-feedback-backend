@@ -13,6 +13,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 const promptPreamble = process.env.PROMPT
+const chatGPTRole    = process.env.CHAT_GPT_ROLE
 
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,14 +37,18 @@ router.get('/pulse', function(req, res) {
 // route POST reqs to /prompt to logic that forwards the prompt on to ChatGPT
 router.post('/prompt', async function(req, res) {
     try {
-        const completion = await openai.createCompletion({
-            model: "text-davinci-003",
-            prompt: promptPreamble + ' ' + req.body.prompt,
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+                {role: "system", content: chatGPTRole },
+                {role: "user"  , content: promptPreamble + ' ' + req.body.prompt}
+            ],
             max_tokens: 1000,
+            n: 1,
             temperature: 0.7
         });
 
-        res.status(200).json({result: completion.data.choices[0].text});
+        res.status(200).json({result: completion.choices[0].message.content});
 
     } catch (error) {
         if (error.response) {
