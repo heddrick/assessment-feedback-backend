@@ -31,7 +31,7 @@ router.use(function(req, res, next) {
 
 // route GET reqs to /pulse to logic that sends a OK response
 router.get('/pulse', function(req, res) {
-    res.status(200).json({result: 'I am alive.'});
+    res.status(200).json({result: 'I am alive. And I am using gpt-4.'});
 });
 
 // route POST reqs to /prompt to logic that forwards the prompt on to ChatGPT
