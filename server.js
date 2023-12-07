@@ -4,13 +4,12 @@ var app        = express();
 var bodyParser = require('body-parser');
 
 // initialize OpenAI code
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAIApi = require("openai");
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
+
+const openai = new OpenAIApi({
+    apiKey: process.env.OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 const promptPreamble = process.env.PROMPT
 const chatGPTRole    = process.env.CHAT_GPT_ROLE
